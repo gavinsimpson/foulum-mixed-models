@@ -74,6 +74,22 @@ usethis::use_course("https://bit.ly/3uguG86")
 * Fitting some GLMs and LMMs
 
 ---
+
+# packages
+
+Load the packages we need
+
+
+```r
+library("dplyr")
+library("readr")
+library("tibble")
+# install.packages("here")
+library("here")
+library("ggplot2")
+```
+
+---
 class: inverse middle center subsection
 
 # GLMs
@@ -305,10 +321,28 @@ Timed censuses at 42 randomly-chosen leaves of the cobra lily
 
 
 ```r
-wasp &lt;- read_csv(here("data", "darlingtonia.csv"), comment = "#",
+wasp &lt;- read_csv("data/darlingtonia.csv", comment = "#",
                  col_types = "dl")
+wasp
 ```
 
+
+```
+## # A tibble: 42 × 2
+##    leafHeight visited
+##         &lt;dbl&gt; &lt;lgl&gt;  
+##  1         67 TRUE   
+##  2         84 TRUE   
+##  3         49 TRUE   
+##  4         70 TRUE   
+##  5         77 TRUE   
+##  6         77 TRUE   
+##  7         66 TRUE   
+##  8         65 TRUE   
+##  9         53 TRUE   
+## 10         57 TRUE   
+## # ℹ 32 more rows
+```
 ---
 
 # Logistic regression &amp;mdash; *Darlingtonia*
@@ -632,7 +666,7 @@ library("patchwork")
 p1 + p2
 ```
 
-![](index_files/figure-html/unnamed-chunk-3-1.svg)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-4-1.svg)&lt;!-- --&gt;
 
 ---
 
@@ -695,6 +729,7 @@ moth &lt;- readr::read_csv("data/uefunex.csv")
 
 
 ```r
+library("dplyr")
 moth |&gt;
     group_by(treatment) |&gt;
     summarise(n = n(), mean = mean(parasitoid), median = median(parasitoid),
@@ -715,6 +750,7 @@ moth |&gt;
 
 
 ```r
+library("ggplot2")
 moth |&gt;
     ggplot(aes(x = treatment, y = parasitoid)) +
     geom_violin(aes(fill = treatment))
@@ -862,6 +898,7 @@ moth |&gt;
 
 
 ```r
+library("dplyr")
 moth |&gt;
     group_by(treatment) |&gt;
     summarise(n = n(), mean = mean(parasitoid), median = median(parasitoid),
@@ -1604,6 +1641,7 @@ Thankfully the *marginaleffects* package has us covered
 
 
 ```r
+library("marginaleffects")
 gnu_glm1 |&gt; avg_slopes(variable = "death")
 ```
 
@@ -2111,6 +2149,7 @@ When to use a random effects (after Bolker 2015 in Fox *et al* (Eds) (2015) *Eco
 
 Don't use random effects if you have fewer than **5** levels&amp;mdash;treat it as a fixed categorical variable instead
 ]
+
 ---
 
 # Simple random effects

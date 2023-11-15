@@ -78,6 +78,21 @@ usethis::use_course("https://bit.ly/3uguG86")
 * Fitting some GLMs and LMMs
 
 ---
+
+# packages
+
+Load the packages we need
+
+```{r}
+library("dplyr")
+library("readr")
+library("tibble")
+# install.packages("here")
+library("here")
+library("ggplot2")
+```
+
+---
 class: inverse middle center subsection
 
 # GLMs
@@ -327,11 +342,17 @@ $$\log_e \left( \frac{\pi}{1-\pi} \right) = \beta_0 + \beta_1 X_i$$
 
 # Logistic regression &mdash; *Darlingtonia*
 
-```{r load-darl-data, echo = TRUE}
-wasp <- read_csv(here("data", "darlingtonia.csv"), comment = "#",
+```{r load-darl-data, echo = TRUE, eval = FALSE}
+wasp <- read_csv("data/darlingtonia.csv", comment = "#",
                  col_types = "dl")
+wasp
 ```
 
+```{r load-darl-data/real, echo = FALSE, eval = TRUE}
+wasp <- read_csv("../data/darlingtonia.csv", comment = "#",
+                 col_types = "dl")
+wasp
+```
 ---
 
 # Logistic regression &mdash; *Darlingtonia*
@@ -635,6 +656,7 @@ moth <- readr::read_csv("../data/uefunex.csv")
 # Diamondback moths &mdash; summary stats
 
 ```{r moth-summary}
+library("dplyr")
 moth |>
     group_by(treatment) |>
     summarise(n = n(), mean = mean(parasitoid), median = median(parasitoid),
@@ -646,6 +668,7 @@ moth |>
 # Diamondback moths &mdash; plot data
 
 ```{r plot-moth-1, out.width = "80%", fig.align = "center"}
+library("ggplot2")
 moth |>
     ggplot(aes(x = treatment, y = parasitoid)) +
     geom_violin(aes(fill = treatment))
@@ -1140,6 +1163,7 @@ mean(p_predation - p_other)
 Thankfully the *marginaleffects* package has us covered
 
 ```{r}
+library("marginaleffects")
 gnu_glm1 |> avg_slopes(variable = "death")
 ```
 
@@ -1399,6 +1423,7 @@ When to use a random effects (after Bolker 2015 in Fox *et al* (Eds) (2015) *Eco
 
 Don't use random effects if you have fewer than **5** levels&mdash;treat it as a fixed categorical variable instead
 ]
+
 ---
 
 # Simple random effects
