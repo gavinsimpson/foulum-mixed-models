@@ -48,19 +48,30 @@ theme_set(theme_minimal(base_size = 16, base_family = 'Fira Sans'))
 
 # Slides
 
-Slidedeck: [bit.ly/physalia-gam-1](https://bit.ly/physalia-gam-1)
+Slidedeck: [bit.ly/47voask](https://bit.ly/47voask)
 
-Sources: [bit.ly/physalia-gam](https://bit.ly/physalia-gam)
+Sources: [bit.ly/3udFioi](https://bit.ly/3udFioi)
 
-Direct download a ZIP of everything: [bit.ly/physalia-gam-zip](https://bit.ly/physalia-gam-zip)
+Direct download a ZIP of everything: [bit.ly/3udFioi](https://bit.ly/3udFioi)
 
 Unpack the zip & remember where you put it
+
+Or `use_course()`
+
+---
+
+# `use_course()`
+
+```{r, eval = FALSE}
+#install.packages("usethis")
+usethis::use_course("https://bit.ly/3uguG86")
+```
 
 ---
 
 # Today's topics
 
-* Brief refresher on R
+* <strike>Brief refresher on R</strike>
 
 * Recap generalised linear models
 
