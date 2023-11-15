@@ -1822,6 +1822,7 @@ With a single categorical variable this is fine, but what do you want when the m
 
 Niavely we could do:
 
+.small[
 
 ```r
 gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"))
@@ -1837,6 +1838,7 @@ gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"))
 ## Columns: term, contrast, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high 
 ## Type:  response
 ```
+]
 
 What are we comparing here?
 
@@ -1846,6 +1848,7 @@ What are we comparing here?
 
 With
 
+.small[
 
 ```r
 gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"))
@@ -1861,6 +1864,7 @@ gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"))
 ## Columns: term, contrast, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high 
 ## Type:  response
 ```
+]
 
 We are averaging the comparisons of the levels of `marrow` over the other variables in the model
 
@@ -1870,6 +1874,7 @@ We are averaging the comparisons of the levels of `marrow` over the other variab
 
 We get different answers if we condition on `sex` say
 
+.small[
 
 ```r
 gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"), by = "sex")
@@ -1895,6 +1900,7 @@ gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"), by = "sex"
 ## Columns: term, contrast, sex, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high, predicted_lo, predicted_hi, predicted 
 ## Type:  response
 ```
+]
 
 This makes total sense; the model includes interactions
 
@@ -1906,6 +1912,7 @@ You need to specify what it is that you mean by a comparison
 
 # Comparisons
 
+.small[
 
 ```r
 gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"), by = c("sex", "death"))
@@ -1943,11 +1950,15 @@ gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"), by = c("se
 ## Columns: term, contrast, sex, death, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high, predicted_lo, predicted_hi, predicted 
 ## Type:  response
 ```
+]
 
 ---
 
 # Comparisons
 
+With so many comparisons, we should adjust the `\(p\)` values
+
+.small[
 
 ```r
 gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"),
@@ -1986,7 +1997,7 @@ gnu_glm1 |&gt; avg_comparisons(variables = list(marrow = "pairwise"),
 ## Columns: term, contrast, sex, death, estimate, std.error, statistic, p.value, s.value, predicted_lo, predicted_hi, predicted 
 ## Type:  response
 ```
-
+]
 
 ---
 class: inverse middle center subsection

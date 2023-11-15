@@ -1225,9 +1225,11 @@ With a single categorical variable this is fine, but what do you want when the m
 
 Niavely we could do:
 
+.small[
 ```{r}
 gnu_glm1 |> avg_comparisons(variables = list(marrow = "pairwise"))
 ```
+]
 
 What are we comparing here?
 
@@ -1237,9 +1239,11 @@ What are we comparing here?
 
 With
 
+.small[
 ```{r}
 gnu_glm1 |> avg_comparisons(variables = list(marrow = "pairwise"))
 ```
+]
 
 We are averaging the comparisons of the levels of `marrow` over the other variables in the model
 
@@ -1249,9 +1253,11 @@ We are averaging the comparisons of the levels of `marrow` over the other variab
 
 We get different answers if we condition on `sex` say
 
+.small[
 ```{r}
 gnu_glm1 |> avg_comparisons(variables = list(marrow = "pairwise"), by = "sex")
 ```
+]
 
 This makes total sense; the model includes interactions
 
@@ -1263,19 +1269,24 @@ You need to specify what it is that you mean by a comparison
 
 # Comparisons
 
+.small[
 ```{r}
 gnu_glm1 |> avg_comparisons(variables = list(marrow = "pairwise"), by = c("sex", "death"))
 ```
+]
 
 ---
 
 # Comparisons
 
+With so many comparisons, we should adjust the $p$ values
+
+.small[
 ```{r}
 gnu_glm1 |> avg_comparisons(variables = list(marrow = "pairwise"),
     by = c("sex", "death"), p_adjust = "fdr")
 ```
-
+]
 
 ---
 class: inverse middle center subsection
