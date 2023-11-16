@@ -2505,6 +2505,517 @@ pop_chick_lmm2 |&gt;
 
 ---
 
+# Problems?
+
+Can you identify any issues with this model?
+
+---
+
+
+# Conditional linear growth model 2
+
+Our model includes an adjustment for `Diet` at `Time == 0`
+
+`\begin{align*}
+\mathtt{weight}_{ij} &amp;\sim \operatorname{Normal}(\mu_{ij}, \sigma_{\epsilon}^2) \\
+\mu_{ij} &amp;= a_i + b_i \mathtt{Time}_{ij} \\
+a_i      &amp;= \alpha_0 + u_i \\
+b_i      &amp;= \beta_0 + \beta_1 \mathtt{Diet}_i + v_i \\
+\begin{bmatrix} u_i \\ v_i \end{bmatrix} &amp;\sim \operatorname{Normal} \begin{pmatrix} \begin{bmatrix} 0 \\ 0 \end{bmatrix} , \begin{bmatrix} \sigma_u^2 &amp; \\ \sigma_{uv} &amp; \sigma_v^2 \end{bmatrix} \end{pmatrix}
+\end{align*}`
+
+We remove the population-level effect of `Diet` from the previous model `\(\alpha_1\)`
+
+---
+
+# Conditional linear growth model 2
+
+In *lme4* we can fit this model with
+
+
+```r
+chick_lmm3 &lt;- lmer(weight ~ 1 + Time + Time:Diet + (1 + Time | Chick),
+  data = ChickWeight)
+```
+
+This model implies different growth rates for each diet, but no constant difference between diets
+
+---
+
+# Conditional linear growth model 2
+
+.small[
+
+```r
+summary(chick_lmm3)
+```
+
+```
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: weight ~ 1 + Time + Time:Diet + (1 + Time | Chick)
+##    Data: ChickWeight
+## 
+## REML criterion at convergence: 4806
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.7405 -0.5656 -0.0450  0.4905  3.4965 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev. Corr 
+##  Chick    (Intercept) 140.43   11.850        
+##           Time         12.15    3.485   -0.97
+##  Residual             163.41   12.783        
+## Number of obs: 578, groups:  Chick, 50
+## 
+## Fixed effects:
+##             Estimate Std. Error t value
+## (Intercept)  29.1854     1.9565  14.918
+## Time          7.3046     0.5761  12.680
+## Time:Diet2    1.1779     0.6150   1.915
+## Time:Diet3    1.6101     0.6150   2.618
+## Time:Diet4    2.8522     0.6152   4.636
+## 
+## Correlation of Fixed Effects:
+##            (Intr) Time   Tm:Dt2 Tm:Dt3
+## Time       -0.779                     
+## Time:Diet2  0.000 -0.368              
+## Time:Diet3  0.000 -0.368  0.345       
+## Time:Diet4  0.001 -0.369  0.345  0.345
+```
+]
+
+
+---
+
+# Conditional linear growth model 2
+
+What have we fitted now?
+
+.row[
+.col-6[
+.smaller[
+
+```r
+p_chick_lmm3 &lt;- predictions(chick_lmm3)
+
+p_chick_lmm3 |&gt;
+ggplot(aes(Time, estimate, level = Chick)) +
+    geom_line() +
+    labs(y = "Predicted weight",
+        x = "Time",
+        title = "Linear growth model 2") +
+    facet_wrap(~ Diet, labeller = label_both)
+```
+]
+]
+
+.col-6[
+![](index_files/figure-html/predictions-chick-lmm3-1.svg)&lt;!-- --&gt;
+]
+]
+
+Each `Chick` has its own regression line (intercept `\(a_i\)` and growth rate `\(b_i\)`)
+
+These are estimated as varying around the *population*-level (average) intercept `\(\alpha_0\)` and growth rate `\(\beta_0\)` plus the population-level `Time` and `Time:Diet` effects
+
+---
+
+# Conditional linear growth model 2
+
+Population-level predictions can be obtained by setting `re.form = NA` when predicting
+
+.row[
+.col-6[
+.smaller[
+
+```r
+pop_chick_lmm3 &lt;- predictions(chick_lmm3,
+    newdata = datagrid(Chick = NA, Diet = 1:4, Time = 0:21),
+    re.form = NA) # &lt;-- !!
+
+pop_chick_lmm3 |&gt;
+    ggplot(aes(x = Time, y = estimate,
+        ymin = conf.low, ymax = conf.high)) +
+    geom_ribbon(alpha = .1, fill = "red") +
+    geom_line() +
+    labs(y = "Predicted weight",
+        x = "Time",
+        title = "Population-level trajectories 2") +
+    facet_wrap(~ Diet, labeller = label_both)
+```
+]
+]
+
+.col-6[
+![](index_files/figure-html/pop-predictions-chick-lmm3-1.svg)&lt;!-- --&gt;
+]
+]
+
+---
+
+# Estimated growth rates
+
+
+```r
+chick_lmm3 |&gt; avg_slopes(variable = "Time", by = "Diet", re.form = NA)
+```
+
+```
+## 
+##  Term    Contrast Diet Estimate Std. Error    z Pr(&gt;|z|)     S 2.5 % 97.5 %
+##  Time mean(dY/dX)    1     7.30      0.576 12.7   &lt;0.001 120.0  6.18   8.43
+##  Time mean(dY/dX)    2     8.48      0.670 12.7   &lt;0.001 119.5  7.17   9.80
+##  Time mean(dY/dX)    3     8.91      0.670 13.3   &lt;0.001 131.7  7.60  10.23
+##  Time mean(dY/dX)    4    10.16      0.670 15.2   &lt;0.001 169.9  8.84  11.47
+## 
+## Columns: term, contrast, Diet, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high, predicted_lo, predicted_hi, predicted 
+## Type:  response
+```
+
+---
+
+# Comparisons for mixed models
+
+Pairwise comparisons of slopes
+
+
+```r
+chick_lmm3 |&gt; avg_comparisons(variables = "Time", by = "Diet", hypothesis = "pairwise", re.form = NA)
+```
+
+```
+## 
+##   Term Estimate Std. Error      z Pr(&gt;|z|)    S 2.5 %  97.5 %
+##  1 - 2   -1.178      0.615 -1.915  0.05544  4.2 -2.38  0.0274
+##  1 - 3   -1.610      0.615 -2.618  0.00884  6.8 -2.82 -0.4048
+##  1 - 4   -2.852      0.615 -4.636  &lt; 0.001 18.1 -4.06 -1.6463
+##  2 - 3   -0.432      0.704 -0.614  0.53930  0.9 -1.81  0.9477
+##  2 - 4   -1.674      0.704 -2.377  0.01744  5.8 -3.05 -0.2939
+##  3 - 4   -1.242      0.704 -1.764  0.07781  3.7 -2.62  0.1383
+## 
+## Columns: term, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high 
+## Type:  response
+```
+
+---
+
+# Comparisons for mixed models
+
+Comparison of slopes with reference level
+
+
+```r
+chick_lmm3 |&gt; avg_comparisons(variables = "Time", by = "Diet", hypothesis = "reference", re.form = NA)
+```
+
+```
+## 
+##   Term Estimate Std. Error    z Pr(&gt;|z|)    S   2.5 % 97.5 %
+##  2 - 1     1.18      0.615 1.92  0.05544  4.2 -0.0274   2.38
+##  3 - 1     1.61      0.615 2.62  0.00884  6.8  0.4048   2.82
+##  4 - 1     2.85      0.615 4.64  &lt; 0.001 18.1  1.6463   4.06
+## 
+## Columns: term, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high 
+## Type:  response
+```
+
+---
+
+# Model diagnostics
+
+Misspecification of GL(M)Ms cannot be reliably diagnosed with standard residual plot
+
+The expected distribution of the data (predictive distribution) changes with the fitted values
+
+We expect to see pattern in standard residual plots
+
+Hard to separate patterns we expect to see if model is corrcetly specified from those we don't expect
+
+---
+
+# Model diagnostics
+
+With GL(M)Ms model diagnostics boil down to whether the conditional distribution of `\(y_i\)` is correctly specified or not
+
+DHARMa approaches this through the simulation of randomised residuals
+
+1. simulate new response data from the model for each `\(y_i\)`
+2. for each `\(y_i\)` calculate the ECDF of the simulated observations
+3. residual is the value of the ECDF at the value of the observed data
+
+A residual of 0 means all simluted values are larger than the observed value
+
+---
+
+# Randomised residuals
+
+&lt;img src="resources/dharma-residuals.png" width="50%" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Randomised residuals
+
+Under this definition, we expect the residuals to be uniform random variables on the interval 0&amp;ndash;1 if the model is correctly specified
+
+Model diagnostics then boil down to looking at deviation from uniform randomness
+
+DHARMa provides plots and tests for a range of possible deviations
+
+---
+
+# Randomised residuals
+
+Typically, as we're interested in doing multiple diagnostics, we simulate the residuals once and reuse them
+
+
+```r
+library("DHARMa")
+sim_lmm3 &lt;- simulateResiduals(chick_lmm3, plot = FALSE)
+```
+
+---
+
+# Randomised residuals
+
+
+```r
+plot(sim_lmm3)
+```
+
+![](index_files/figure-html/unnamed-chunk-50-1.svg)&lt;!-- --&gt;
+
+---
+
+# GLMMs
+
+Generalized linear mixed models generalize linear mixed mdoels in the same way as GLMs generalize linear models
+
+We need to choose an appropriate conditional distribution for the response and link function
+
+Can fit using `glmer()` but limited by range of families allowed
+
+`glmmTMB::glmmTMB()` is a new (developing) alternative with wider array of features inc. families
+
+Beyond this you likely need Bayesian support and I would suggest `brms::brm()`
+
+---
+
+# GLMMs
+
+Are things improved by fitting a GLMM (chick weight can't be negative)?
+
+
+```r
+chick_glmm1 &lt;- glmer(weight ~ 1 + Time + Time:Diet + (1 + Time | Chick),
+    data = ChickWeight, family = Gamma(link = "log"))
+sim_glmm1 &lt;- simulateResiduals(chick_glmm1, plot = FALSE)
+```
+
+---
+
+# Randomised residuals
+
+
+```r
+plot(sim_glmm1)
+```
+
+![](index_files/figure-html/unnamed-chunk-52-1.svg)&lt;!-- --&gt;
+
+--
+
+Nope!
+
+---
+
+# ???
+
+
+```r
+chick_lmm4 &lt;- lmer(weight ~ 1 + poly(Time, 2) + poly(Time, 2):Diet + (1 + poly(Time, 2) | Chick),
+    data = ChickWeight)
+sim_lmm4 &lt;- simulateResiduals(chick_lmm4, plot = FALSE)
+```
+
+---
+
+# Randomised residuals
+
+
+```r
+plot(sim_lmm4)
+```
+
+![](index_files/figure-html/unnamed-chunk-54-1.svg)&lt;!-- --&gt;
+
+---
+
+# Clover seeds
+
+.small[
+The seeds of some species of clover (*Trifolium* spp.) will not germinate immediately after ripening, but must undergo a period of "softening", by exposure to fluctuating high and low temperatures, usually on the soil surface.
+
+Seeds of 8 clover species were sown into strips of fine mesh cotton bags, 100 seeds of a single species in each bag
+
+Each strip comprised one bag of each species. At the start of summer, the bags were laid on the soil surface in full sun at a site cleared of vegetation.
+
+At intervals during the summer and autumn, two or four strips were removed from the field, and the seeds in each bag were tested to determine how many were still "hard" (i.e. would not germinate when moistened in favourable conditions)
+]
+
+---
+
+# Clover Seeds
+
+As the species studied all belong to the genus *Trifolium* they are expected to have some characteristics in common, but no prior information is available to us concerning the seed-softening behaviour of the individual species.
+
+* Decide whether "species" should be specified as a fixed-effect or a random-effect term in the model to be fitted to these data and explain your decision.
+
+---
+
+# Clover Seeds
+
+* Specify a regression model for this experiment. Following your decision concerning "species", which term(s) in the model should be regarded as fixed and which as random? What is the response variable?
+
+---
+
+# Clover Seeds
+
+* Fit your mixed model to the data, specifying an appropriate error distribution for the response variable, and an appropriate link function to relate the response variable to the linear model.
+
+* Consider whether there is evidence that any terms can be omitted from the model. If so, fit the modified model to the data.
+
+---
+
+# Clover Seeds
+
+* Make a graphical display, showing the fitted relationship between the proportion of hard seed remaining for each species and the time elapsed since the start of exposure, and showing the scatter of the observed values around this relationship.
+
+---
+
+# Clover seeds load data
+
+
+```r
+clover &lt;- readr::read_csv("data/clover.csv")
+```
+
+
+
+
+```r
+clover &lt;- clover |&gt;
+    mutate(fspecies = factor(species),
+        freplication = factor(replication),
+        ftime = factor(time))
+library("lme4")
+```
+
+---
+
+# Clover seeds
+
+
+```r
+clover
+```
+
+```
+## # A tibble: 240 × 8
+##    species       replication  time nhard nsoft fspecies      freplication ftime
+##    &lt;chr&gt;               &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt;         &lt;fct&gt;        &lt;fct&gt;
+##  1 T. glomeratum           1     0    98     2 T. glomeratum 1            0    
+##  2 T. glomeratum           2     0    99     1 T. glomeratum 2            0    
+##  3 T. glomeratum           3     0    99     1 T. glomeratum 3            0    
+##  4 T. glomeratum           4     0    99     1 T. glomeratum 4            0    
+##  5 T. spumosum             1     0    94     6 T. spumosum   1            0    
+##  6 T. spumosum             2     0    93     7 T. spumosum   2            0    
+##  7 T. spumosum             3     0    95     5 T. spumosum   3            0    
+##  8 T. spumosum             4     0    96     4 T. spumosum   4            0    
+##  9 T. hirtum               1     0    88    12 T. hirtum     1            0    
+## 10 T. hirtum               2     0    89    11 T. hirtum     2            0    
+## # ℹ 230 more rows
+```
+
+---
+
+# Stop
+
+---
+
+# Clover seeds answers
+
+---
+
+# Clover seeds
+
+We are told that the clover species have features in common, but there is no relevant prior information about their individual characteristics. This means that they form an exchangeable set, and it is therefore appropriate to specify "species" as a random-effect model term.
+
+---
+
+# Clover seeds
+
+
+```r
+clover_glmm1 &lt;- glmer(cbind(nhard, nsoft) ~ time + (time | fspecies) +
+        (1 | fspecies:ftime) + (1 | ftime:freplication),
+    family = binomial(link = "logit"), data = clover)
+```
+
+
+
+```r
+library("glmmTMB")
+clover_tmb1 &lt;- glmmTMB(cbind(nhard, nsoft) ~ time + (time | fspecies) +
+        (1 | fspecies:ftime) + (1 | ftime:freplication),
+    family = binomial(link = "logit"), data = clover)
+```
+
+---
+
+# GA(M)M
+
+
+```r
+library("mgcv")
+chick_gam1 &lt;- bam(weight ~ Diet + s(Time, by = Diet, k = 5) + s(Time, Chick, bs = "fs", k = 5),
+    data = ChickWeight, method = "fREML")
+sim_gam1 &lt;- simulateResiduals(chick_gam1, plot = FALSE)
+plot(sim_gam1)
+```
+
+![](index_files/figure-html/unnamed-chunk-61-1.svg)&lt;!-- --&gt;
+
+---
+
+# GA(M)M
+
+
+```r
+chick_gam2 &lt;- bam(weight ~ Diet + s(Time, by = Diet, k = 5) + s(Time, Chick, bs = "fs", k = 5),
+    data = ChickWeight, method = "fREML", family = Gamma(link = "log"))
+sim_gam2 &lt;- simulateResiduals(chick_gam2, plot = FALSE)
+plot(sim_gam2)
+```
+
+![](index_files/figure-html/unnamed-chunk-62-1.svg)&lt;!-- --&gt;
+
+---
+
+# GA(M)M
+
+
+```r
+chick_gam3 &lt;- bam(weight ~ Diet + s(Time, by = Diet, k = 5) + s(Time, Chick, bs = "fs", k = 5),
+    data = ChickWeight, method = "fREML", family = tw(link = "log"), discrete = TRUE, n.threads = 3)
+sim_gam3 &lt;- simulateResiduals(chick_gam3, plot = FALSE)
+plot(sim_gam3)
+```
+
+![](index_files/figure-html/unnamed-chunk-63-1.svg)&lt;!-- --&gt;
+
+---
+
 # Re-use
 
 Copyright © (2015&amp;ndash;2023) Gavin L. Simpson Some Rights Reserved

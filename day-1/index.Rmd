@@ -348,7 +348,7 @@ wasp <- read_csv("data/darlingtonia.csv", comment = "#",
 wasp
 ```
 
-```{r load-darl-data/real, echo = FALSE, eval = TRUE}
+```{r load-darl-data-real, echo = FALSE, eval = TRUE}
 wasp <- read_csv("../data/darlingtonia.csv", comment = "#",
                  col_types = "dl")
 wasp
@@ -1716,6 +1716,402 @@ pop_chick_lmm2 |>
 ```
 ]
 ]
+
+---
+
+# Problems?
+
+Can you identify any issues with this model?
+
+---
+
+
+# Conditional linear growth model 2
+
+Our model includes an adjustment for `Diet` at `Time == 0`
+
+\begin{align*}
+\mathtt{weight}_{ij} &\sim \operatorname{Normal}(\mu_{ij}, \sigma_{\epsilon}^2) \\
+\mu_{ij} &= a_i + b_i \mathtt{Time}_{ij} \\
+a_i      &= \alpha_0 + u_i \\
+b_i      &= \beta_0 + \beta_1 \mathtt{Diet}_i + v_i \\
+\begin{bmatrix} u_i \\ v_i \end{bmatrix} &\sim \operatorname{Normal} \begin{pmatrix} \begin{bmatrix} 0 \\ 0 \end{bmatrix} , \begin{bmatrix} \sigma_u^2 & \\ \sigma_{uv} & \sigma_v^2 \end{bmatrix} \end{pmatrix}
+\end{align*}
+
+We remove the population-level effect of `Diet` from the previous model $\alpha_1$
+
+---
+
+# Conditional linear growth model 2
+
+In *lme4* we can fit this model with
+
+```{r chick-lmer3}
+chick_lmm3 <- lmer(weight ~ 1 + Time + Time:Diet + (1 + Time | Chick),
+  data = ChickWeight)
+```
+
+This model implies different growth rates for each diet, but no constant difference between diets
+
+---
+
+# Conditional linear growth model 2
+
+.small[
+```{r summary-chick-3}
+summary(chick_lmm3)
+```
+]
+
+
+---
+
+# Conditional linear growth model 2
+
+What have we fitted now?
+
+.row[
+.col-6[
+.smaller[
+```{r predictions-chick-lmm3, eval = FALSE}
+p_chick_lmm3 <- predictions(chick_lmm3)
+
+p_chick_lmm3 |>
+ggplot(aes(Time, estimate, level = Chick)) +
+    geom_line() +
+    labs(y = "Predicted weight",
+        x = "Time",
+        title = "Linear growth model 2") +
+    facet_wrap(~ Diet, labeller = label_both)
+```
+]
+]
+
+.col-6[
+```{r predictions-chick-lmm3, echo = FALSE}
+```
+]
+]
+
+Each `Chick` has its own regression line (intercept $a_i$ and growth rate $b_i$)
+
+These are estimated as varying around the *population*-level (average) intercept $\alpha_0$ and growth rate $\beta_0$ plus the population-level `Time` and `Time:Diet` effects
+
+---
+
+# Conditional linear growth model 2
+
+Population-level predictions can be obtained by setting `re.form = NA` when predicting
+
+.row[
+.col-6[
+.smaller[
+```{r pop-predictions-chick-lmm3, eval = FALSE}
+pop_chick_lmm3 <- predictions(chick_lmm3,
+    newdata = datagrid(Chick = NA, Diet = 1:4, Time = 0:21),
+    re.form = NA) # <-- !!
+
+pop_chick_lmm3 |>
+    ggplot(aes(x = Time, y = estimate,
+        ymin = conf.low, ymax = conf.high)) +
+    geom_ribbon(alpha = .1, fill = "red") +
+    geom_line() +
+    labs(y = "Predicted weight",
+        x = "Time",
+        title = "Population-level trajectories 2") +
+    facet_wrap(~ Diet, labeller = label_both)
+```
+]
+]
+
+.col-6[
+```{r pop-predictions-chick-lmm3, echo = FALSE}
+```
+]
+]
+
+---
+
+# Estimated growth rates
+
+```{r}
+chick_lmm3 |> avg_slopes(variable = "Time", by = "Diet", re.form = NA)
+```
+
+---
+
+# Comparisons for mixed models
+
+Pairwise comparisons of slopes
+
+```{r}
+chick_lmm3 |> avg_comparisons(variables = "Time", by = "Diet", hypothesis = "pairwise", re.form = NA)
+```
+
+---
+
+# Comparisons for mixed models
+
+Comparison of slopes with reference level
+
+```{r}
+chick_lmm3 |> avg_comparisons(variables = "Time", by = "Diet", hypothesis = "reference", re.form = NA)
+```
+
+---
+
+# Model diagnostics
+
+Misspecification of GL(M)Ms cannot be reliably diagnosed with standard residual plot
+
+The expected distribution of the data (predictive distribution) changes with the fitted values
+
+We expect to see pattern in standard residual plots
+
+Hard to separate patterns we expect to see if model is corrcetly specified from those we don't expect
+
+---
+
+# Model diagnostics
+
+With GL(M)Ms model diagnostics boil down to whether the conditional distribution of $y_i$ is correctly specified or not
+
+DHARMa approaches this through the simulation of randomised residuals
+
+1. simulate new response data from the model for each $y_i$
+2. for each $y_i$ calculate the ECDF of the simulated observations
+3. residual is the value of the ECDF at the value of the observed data
+
+A residual of 0 means all simluted values are larger than the observed value
+
+---
+
+# Randomised residuals
+
+```{r, echo = FALSE, out.width = "50%", fig.align = "center"}
+knitr::include_graphics("resources/dharma-residuals.png")
+```
+
+---
+
+# Randomised residuals
+
+Under this definition, we expect the residuals to be uniform random variables on the interval 0&ndash;1 if the model is correctly specified
+
+Model diagnostics then boil down to looking at deviation from uniform randomness
+
+DHARMa provides plots and tests for a range of possible deviations
+
+---
+
+# Randomised residuals
+
+Typically, as we're interested in doing multiple diagnostics, we simulate the residuals once and reuse them
+
+```{r}
+library("DHARMa")
+sim_lmm3 <- simulateResiduals(chick_lmm3, plot = FALSE)
+```
+
+---
+
+# Randomised residuals
+
+```{r}
+plot(sim_lmm3)
+```
+
+---
+
+# GLMMs
+
+Generalized linear mixed models generalize linear mixed mdoels in the same way as GLMs generalize linear models
+
+We need to choose an appropriate conditional distribution for the response and link function
+
+Can fit using `glmer()` but limited by range of families allowed
+
+`glmmTMB::glmmTMB()` is a new (developing) alternative with wider array of features inc. families
+
+Beyond this you likely need Bayesian support and I would suggest `brms::brm()`
+
+---
+
+# GLMMs
+
+Are things improved by fitting a GLMM (chick weight can't be negative)?
+
+```{r}
+chick_glmm1 <- glmer(weight ~ 1 + Time + Time:Diet + (1 + Time | Chick),
+    data = ChickWeight, family = Gamma(link = "log"))
+sim_glmm1 <- simulateResiduals(chick_glmm1, plot = FALSE)
+```
+
+---
+
+# Randomised residuals
+
+```{r}
+plot(sim_glmm1)
+```
+
+--
+
+Nope!
+
+---
+
+# ???
+
+```{r}
+chick_lmm4 <- lmer(weight ~ 1 + poly(Time, 2) + poly(Time, 2):Diet + (1 + poly(Time, 2) | Chick),
+    data = ChickWeight)
+sim_lmm4 <- simulateResiduals(chick_lmm4, plot = FALSE)
+```
+
+---
+
+# Randomised residuals
+
+```{r}
+plot(sim_lmm4)
+```
+
+---
+
+# Clover seeds
+
+.small[
+The seeds of some species of clover (*Trifolium* spp.) will not germinate immediately after ripening, but must undergo a period of "softening", by exposure to fluctuating high and low temperatures, usually on the soil surface.
+
+Seeds of 8 clover species were sown into strips of fine mesh cotton bags, 100 seeds of a single species in each bag
+
+Each strip comprised one bag of each species. At the start of summer, the bags were laid on the soil surface in full sun at a site cleared of vegetation.
+
+At intervals during the summer and autumn, two or four strips were removed from the field, and the seeds in each bag were tested to determine how many were still "hard" (i.e. would not germinate when moistened in favourable conditions)
+]
+
+---
+
+# Clover Seeds
+
+As the species studied all belong to the genus *Trifolium* they are expected to have some characteristics in common, but no prior information is available to us concerning the seed-softening behaviour of the individual species.
+
+* Decide whether "species" should be specified as a fixed-effect or a random-effect term in the model to be fitted to these data and explain your decision.
+
+---
+
+# Clover Seeds
+
+* Specify a regression model for this experiment. Following your decision concerning "species", which term(s) in the model should be regarded as fixed and which as random? What is the response variable?
+
+---
+
+# Clover Seeds
+
+* Fit your mixed model to the data, specifying an appropriate error distribution for the response variable, and an appropriate link function to relate the response variable to the linear model.
+
+* Consider whether there is evidence that any terms can be omitted from the model. If so, fit the modified model to the data.
+
+---
+
+# Clover Seeds
+
+* Make a graphical display, showing the fitted relationship between the proportion of hard seed remaining for each species and the time elapsed since the start of exposure, and showing the scatter of the observed values around this relationship.
+
+---
+
+# Clover seeds load data
+
+```{r, echo = TRUE, eval = FALSE, echo = TRUE}
+clover <- readr::read_csv("data/clover.csv")
+```
+
+```{r, echo = TRUE, eval = TRUE, echo = FALSE}
+clover <- readr::read_csv("../data/clover.csv")
+```
+
+```{r}
+clover <- clover |>
+    mutate(fspecies = factor(species),
+        freplication = factor(replication),
+        ftime = factor(time))
+library("lme4")
+```
+
+---
+
+# Clover seeds
+
+```{r}
+clover
+```
+
+---
+
+# Stop
+
+---
+
+# Clover seeds answers
+
+---
+
+# Clover seeds
+
+We are told that the clover species have features in common, but there is no relevant prior information about their individual characteristics. This means that they form an exchangeable set, and it is therefore appropriate to specify "species" as a random-effect model term.
+
+---
+
+# Clover seeds
+
+```{r}
+clover_glmm1 <- glmer(cbind(nhard, nsoft) ~ time + (time | fspecies) +
+        (1 | fspecies:ftime) + (1 | ftime:freplication),
+    family = binomial(link = "logit"), data = clover)
+```
+
+
+```{r}
+library("glmmTMB")
+clover_tmb1 <- glmmTMB(cbind(nhard, nsoft) ~ time + (time | fspecies) +
+        (1 | fspecies:ftime) + (1 | ftime:freplication),
+    family = binomial(link = "logit"), data = clover)
+```
+
+---
+
+# GA(M)M
+
+```{r}
+library("mgcv")
+chick_gam1 <- bam(weight ~ Diet + s(Time, by = Diet, k = 5) + s(Time, Chick, bs = "fs", k = 5),
+    data = ChickWeight, method = "fREML")
+sim_gam1 <- simulateResiduals(chick_gam1, plot = FALSE)
+plot(sim_gam1)
+```
+
+---
+
+# GA(M)M
+
+```{r}
+chick_gam2 <- bam(weight ~ Diet + s(Time, by = Diet, k = 5) + s(Time, Chick, bs = "fs", k = 5),
+    data = ChickWeight, method = "fREML", family = Gamma(link = "log"))
+sim_gam2 <- simulateResiduals(chick_gam2, plot = FALSE)
+plot(sim_gam2)
+```
+
+---
+
+# GA(M)M
+
+```{r}
+chick_gam3 <- bam(weight ~ Diet + s(Time, by = Diet, k = 5) + s(Time, Chick, bs = "fs", k = 5),
+    data = ChickWeight, method = "fREML", family = tw(link = "log"), discrete = TRUE, n.threads = 3)
+sim_gam3 <- simulateResiduals(chick_gam3, plot = FALSE)
+plot(sim_gam3)
+```
 
 ---
 
